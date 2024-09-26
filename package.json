@@ -5,7 +5,7 @@
 	"description": "This is a simple project setup using Drizzle ORM and TypeScript in Express JS.",
 	"main": "dist/src/index.js",
 	"scripts": {
-		"build": "npx tsc",
+		"build": "tsc",
 		"start": "node ./dist/src/index.js",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate"
