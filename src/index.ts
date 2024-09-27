@@ -1,13 +1,13 @@
 import express, { Express, Request, Response } from "express";
-import dotenv from "dotenv";
+import "dotenv/config";
 import session from 'express-session'
 import cookieParser from "cookie-parser";
 import cors from 'cors'
 
+
 import { router as EmailPasswordAuthRoutes } from "./routes/authRoutes/emailPasswordAuthRoutes.js";
 import { router as GoogleAuthRoutes } from "./routes/authRoutes/googleAuthRoutes.js"
 
-dotenv.config();
 
 const app: Express = express();
 const port = process.env.PORT ?? 3000;
@@ -16,17 +16,17 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(session({
-	secret: 'aiculgdgdgdgdggrgdfgedg',
+	secret: 'noitacitnehtuaaicul',
 	resave: false,
 	saveUninitialized: false,
 	cookie: {
-		secure: false,
+		secure: process.env.NODE_ENV === 'production',
 	}
 }));
 
 //Enable cors for http://localhost:5173 
 app.use(cors({
-	origin: 'http://localhost:5173',
+	origin: process.env.CLIENT_URL,
 	credentials: true,
 }));
 
