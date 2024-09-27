@@ -5,8 +5,9 @@
 	"description": "This is a simple project setup using Drizzle ORM and TypeScript in Express JS.",
 	"main": "index.js",
 	"scripts": {
-		"build": "tsc",
+		"build": "tsc --build",
 		"start": "node ./dist/index.js",
+		"dev": "nodemon --esm ./src/index.ts",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate"
 	},
@@ -37,7 +38,7 @@
 		"@types/node": "^22.5.5",
 		"@types/pg": "^8.11.10",
 		"drizzle-kit": "^0.24.2",
-		"nodemon": "^3.1.4",
+		"nodemon": "^3.1.7",
 		"ts-node": "^10.9.2",
 		"typescript": "^5.6.2"
 	}
