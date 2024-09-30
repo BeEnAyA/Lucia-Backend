@@ -24,7 +24,6 @@ app.use(session({
 	}
 }));
 
-//Enable cors for http://localhost:5173 
 app.use(cors({
 	origin: process.env.CLIENT_URL,
 	credentials: true,

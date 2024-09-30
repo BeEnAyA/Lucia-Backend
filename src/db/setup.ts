@@ -12,9 +12,6 @@ const pool = new Pool({
     database: process.env.DB_DATABASE,
     ssl: true
 });
-
-export const db = drizzle(pool);
-
 (async () => {
     try {
         await pool.connect();
@@ -23,3 +20,5 @@ export const db = drizzle(pool);
         console.error('[database]:Failed to connect to the database:', error);
     }
 })();
+
+export const db = drizzle(pool);
