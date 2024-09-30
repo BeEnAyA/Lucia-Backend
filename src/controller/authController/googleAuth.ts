@@ -40,7 +40,6 @@ export const getUser = async (accessToken: string) => {
 
 export const googleCallbackController = async (request: Request, response: Response) => {
     try {
-        console.log(request.body.code, request.body.state)
         const code = request.body.code?.toString();
         const state = request.body.state?.toString();
         const codeVerifier = request.cookies["code_verifier"];
@@ -48,7 +47,7 @@ export const googleCallbackController = async (request: Request, response: Respo
 
         //Validate incoming code,state and codeVerifier
         if (!code || !state || state !== googleOAuthState || !codeVerifier) {
-            return response.status(400).json({ error: "Missing or invalid code,state or code verifier" });
+            return response.status(400).json({ message: "Missing or invalid code,state or code verifier" });
         }
 
         // Validate authorization code and retrieve tokens
