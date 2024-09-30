@@ -17,13 +17,15 @@ export const googleLoginController = async (_: Request, response: Response) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         maxAge: 60 * 10 * 1000,
-        path: "/"
+        path: "/",
+        sameSite: "none"
     });
     response.cookie("code_verifier", codeVerifier, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         maxAge: 60 * 10 * 1000,
-        path: "/"
+        path: "/",
+        sameSite: "none"
     });
     return response.status(200).json({ url: authorizationUrl });
 }
