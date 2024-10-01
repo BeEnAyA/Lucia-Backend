@@ -18,14 +18,14 @@ export const googleLoginController = async (_: Request, response: Response) => {
         secure: process.env.NODE_ENV === "production",
         maxAge: 60 * 10 * 1000,
         path: "/",
-        sameSite: "none"
+        // sameSite: "none"
     });
     response.cookie("code_verifier", codeVerifier, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         maxAge: 60 * 10 * 1000,
         path: "/",
-        sameSite: "none"
+        // sameSite: "none"
     });
     return response.status(200).json({ url: authorizationUrl });
 }
@@ -60,19 +60,19 @@ export const googleCallbackController = async (request: Request, response: Respo
 
 
         // Check if user already exists
-        const existingAccount = await db.select().from(userTable).where(eq(userTable.email, googleUser.email));
+        const [existingUser] = await db.select().from(userTable).where(eq(userTable.email, googleUser.email));
 
-        console.log(existingAccount[0]);
-
-        if (existingAccount.length) {
+        if (existingUser) {
             // If user exists but does not have provider id means, user is registered with email/password
-            if (existingAccount[0].providerId === null) {
-                return response.status(409).json({ message: "Email is already registered via email/password." })
-            }
+            // if (existingUser.providerId === null) {
+            //     return response.status(409).json({ message: "Email is already registered via email/password." })
+            // }
+            existingUser.providerId = "google";
+            existingUser.providerUserId = googleUser.sub;
 
             //Create a new session for existing user
-            const session = await lucia.createSession(existingAccount[0].id, {})
-            const sessionCookie = lucia.createSessionCookie(session.id)
+            const session = await lucia.createSession(existingUser.id, {});
+            const sessionCookie = lucia.createSessionCookie(session.id);
             const { user } = await lucia.validateSession(session.id);
 
             //Set the session cookie and return the user info
@@ -84,7 +84,7 @@ export const googleCallbackController = async (request: Request, response: Respo
         }
 
         //Create a new user if not already registered
-        const userId = generateIdFromEntropySize(10)
+        const userId = generateIdFromEntropySize(10);
         const newUser = {
             id: userId,
             name: googleUser.name,
@@ -93,9 +93,9 @@ export const googleCallbackController = async (request: Request, response: Respo
             providerUserId: googleUser.sub,
             profileImage: googleUser.picture,
             isVerified: true,
-        }
+        };
 
-        await db.insert(userTable).values(newUser)
+        await db.insert(userTable).values(newUser);
 
         //Create a new session for the newly created user
         const session = await lucia.createSession(userId, {});

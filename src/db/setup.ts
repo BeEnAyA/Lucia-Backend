@@ -1,24 +1,7 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
-import pg from 'pg';
+import { drizzle } from 'drizzle-orm/neon-http';
+import { neon } from "@neondatabase/serverless";
 import 'dotenv/config';
 
-const { Pool } = pg;
+const sql = neon(process.env.DATABASE_URL!);
+export const db = drizzle(sql);
 
-const pool = new Pool({
-    host: process.env.DB_HOST,
-    port: Number(process.env.DB_PORT),
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE,
-    ssl: true
-});
-(async () => {
-    try {
-        await pool.connect();
-        console.log('[database]:Connected to PostgreSQL database successfully!');
-    } catch (error) {
-        console.error('[database]:Failed to connect to the database:', error);
-    }
-})();
-
-export const db = drizzle(pool);

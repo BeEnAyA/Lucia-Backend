@@ -46,9 +46,6 @@ export const signUpController = async (request: Request, response: Response) => 
         const [existingEmail] = await db.select().from(userTable).where(eq(userTable.email, email));
 
         if (existingEmail) {
-            if (existingEmail.providerId && existingEmail.providerUserId) {
-                return response.status(409).json({ error: "Email is already registered with an authentication provider." })
-            }
             return response.status(409).json({ error: "Email is already registered." })
         }
         const userId = generateIdFromEntropySize(10) //Generate user id (16 characters long) using utility function provided by lucia 
@@ -158,8 +155,11 @@ export const signInController = async (request: Request, response: Response) => 
             return response.status(404).json({ message: "Email is not registered." })
         }
 
-        if (existingUser.providerId) {
-            return response.status(401).json({ message: "Email is linked with a social login.Please continue with social login." })
+        // if (existingUser.providerId) {
+        //     return response.status(401).json({ message: "Email is linked with a social login.Please continue with social login." })
+        // }
+        if (!existingUser.password) {
+            return response.status(401).json({ message: "Password does not match." })
         }
 
         const validPassword = await verify(existingUser.password as string, password, {
@@ -232,14 +232,14 @@ export const forgotPasswordController = async (request: Request, response: Respo
         }
 
         //If email is registered but has providerId and providerUserId, means the  email is associated with social login
-        if (existingEmail?.providerId && existingEmail.providerUserId) {
-            return response.status(400).json({
-                message: "Cannot reset password for email with social login."
-            })
-        }
+        // if (existingEmail?.providerId && existingEmail.providerUserId) {
+        //     return response.status(400).json({
+        //         message: "Cannot reset password for email with social login."
+        //     })
+        // }
 
         //If email is registered but has not been provided yet
-        if(!existingEmail.isVerified){
+        if (!existingEmail.isVerified) {
             return response.status(400).json({
                 message: "Your email is not verified. First verify your email.",
             })
@@ -312,7 +312,7 @@ export const resetPasswordController = async (request: Request, response: Respon
         })
 
     } catch (error: any) {
-        response.status(500).json({ message: error.message})
+        response.status(500).json({ message: error.message })
     }
 }
 
