@@ -155,14 +155,11 @@ export const signInController = async (request: Request, response: Response) => 
             return response.status(404).json({ message: "Email is not registered." })
         }
 
-        // if (existingUser.providerId) {
-        //     return response.status(401).json({ message: "Email is linked with a social login.Please continue with social login." })
-        // }
         if (!existingUser.password) {
             return response.status(401).json({ message: "Password does not match." })
         }
 
-        const validPassword = await verify(existingUser.password as string, password, {
+        const validPassword = await verify(existingUser.password, password, {
             memoryCost: 19456,
             timeCost: 2,
             outputLen: 32,

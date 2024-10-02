@@ -4,4 +4,4 @@ import { googleCallbackController, googleLoginController } from "../../controlle
 export const router = Router();
 
 router.route('/login/google').get(googleLoginController)
-router.route('/login/google/callback').post(googleCallbackController)
+router.route('/login/google/callback/:token?').post(googleCallbackController)

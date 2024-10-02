@@ -5,6 +5,7 @@ import { db } from "../../db/setup.js"
 import { userTable } from "../../db/schema.js"
 import { eq } from "drizzle-orm"
 import { generateIdFromEntropySize } from "lucia"
+import { OAuth2Client } from 'google-auth-library';
 import "dotenv/config"
 
 
@@ -18,14 +19,14 @@ export const googleLoginController = async (_: Request, response: Response) => {
         secure: process.env.NODE_ENV === "production",
         maxAge: 60 * 10 * 1000,
         path: "/",
-        sameSite: "none"
+        ...(process.env.NODE_ENV === 'production' && { sameSite: 'none' })
     });
     response.cookie("code_verifier", codeVerifier, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         maxAge: 60 * 10 * 1000,
         path: "/",
-        sameSite: "none"
+        ...(process.env.NODE_ENV === 'production' && { sameSite: 'none' })
     });
     return response.status(200).json({ url: authorizationUrl });
 }
@@ -40,33 +41,50 @@ export const getUser = async (accessToken: string) => {
     return await userInfoResponse.json();
 }
 
+export const getUserDetails = async (token: string) => {
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    return payload;
+}
+
 export const googleCallbackController = async (request: Request, response: Response) => {
     try {
-        const code = request.body.code?.toString();
-        const state = request.body.state?.toString();
-        const codeVerifier = request.cookies["code_verifier"];
-        const googleOAuthState = request.cookies["google_oauth_state"]
+        let token: string;
+        if (request.body.idToken) {
+            token = decodeURIComponent(request.body.idToken);
+            console.log("Token", token);
+        }
+        else {
+            const code = request.body.code?.toString();
+            const state = request.body.state?.toString();
+            const codeVerifier = request.cookies["code_verifier"];
+            const googleOAuthState = request.cookies["google_oauth_state"]
 
-        //Validate incoming code,state and codeVerifier
-        if (!code || !state || state !== googleOAuthState || !codeVerifier) {
-            return response.status(400).json({ message: "Missing or invalid code,state or code verifier" });
+            //Validate incoming code,state and codeVerifier
+            if (!code || !state || state !== googleOAuthState || !codeVerifier) {
+                return response.status(400).json({ message: "Missing or invalid code,state or code verifier" });
+            }
+
+            // Validate authorization code and retrieve tokens
+            const { idToken } = await google.validateAuthorizationCode(code, codeVerifier);
+            token = idToken;
         }
 
-        // Validate authorization code and retrieve tokens
-        const tokens = await google.validateAuthorizationCode(code, codeVerifier);
-
         //Fetch user details from Google
-        const googleUser = await getUser(tokens.accessToken);
+        const googleUser = await getUserDetails(token);
 
+        if (!googleUser) {
+            return response.status(400).json({ message: "Token is not valid" });
+        }
 
         // Check if user already exists
-        const [existingUser] = await db.select().from(userTable).where(eq(userTable.email, googleUser.email));
+        const [existingUser] = await db.select().from(userTable).where(eq(userTable.email, googleUser.email as string));
 
         if (existingUser) {
-            // If user exists but does not have provider id means, user is registered with email/password
-            // if (existingUser.providerId === null) {
-            //     return response.status(409).json({ message: "Email is already registered via email/password." })
-            // }
             existingUser.providerId = "google";
             existingUser.providerUserId = googleUser.sub;
 
@@ -87,7 +105,7 @@ export const googleCallbackController = async (request: Request, response: Respo
         const userId = generateIdFromEntropySize(10);
         const newUser = {
             id: userId,
-            name: googleUser.name,
+            name: googleUser.name as string,
             email: googleUser.email,
             providerId: "google",
             providerUserId: googleUser.sub,
@@ -109,6 +127,7 @@ export const googleCallbackController = async (request: Request, response: Respo
             data: user
         })
     } catch (error) {
-        return response.status(500).json({ error: error })
+        console.log(error)
+        return response.status(500).json({ message: error })
     }
 }
